@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Redis Object Cache
-Plugin URI: http://wordpress.org/plugins/redis-cache/
+Plugin URI: https://github.com/imposibrus/Redis-Object-Cache
 Description: A persistent object cache backend powered by Redis. Supports Predis, PhpRedis, HHVM, replication and clustering.
 Version: 1.3.2
 Text Domain: redis-cache
