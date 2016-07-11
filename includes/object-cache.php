@@ -80,6 +80,21 @@ function wp_cache_delete( $key, $group = '', $time = 0 ) {
 }
 
 /**
+ * Remove the branch of items from the cache.
+ *
+ * @param string $prefix    The key under which to store the value.
+ * @param string $group  The group value appended to the $key.
+ *
+ * @global WP_Object_Cache $wp_object_cache
+ *
+ * @return bool           Returns TRUE on success or FALSE on failure.
+ */
+function wp_cache_delete_by_prefix( $prefix, $group = '' ) {
+	global $wp_object_cache;
+	return $wp_object_cache->deleteByPrefix( $prefix, $group );
+}
+
+/**
  * Invalidate all items in the cache.
  *
  * @param int $delay  Number of seconds to wait before invalidating the items.
@@ -557,6 +572,40 @@ class WP_Object_Cache {
 		}
 
 		do_action('redis_object_cache_delete', $key, $group);
+
+		return $result;
+	}
+
+	/**
+	 * Remove the branch of items from the cache.
+	 *
+	 * @param   string $prefix The prefix under which to store the value.
+	 * @param   string $group  The group value appended to the $key.
+	 *
+	 * @return  bool           Returns TRUE on success or FALSE on failure.
+	 */
+	public function deleteByPrefix( $prefix, $group = 'default' ) {
+		$derived_key = $this->build_key( $prefix, $group );
+
+		$regexp_key = str_replace('*', '.*', $derived_key);
+
+		$result = false;
+
+		foreach ( $this->cache as $key => $value ) {
+			if(preg_match($regexp_key, $key)) {
+				unset( $this->cache[ $key ] );
+				$result = true;
+			}
+		}
+
+		if ( $this->redis_status() && ! in_array( $group, $this->no_redis_groups ) ) {
+			foreach ( $this->redis->keys( $derived_key ) as $key ) {
+				$this->redis->del( $key );
+				$result = true;
+			}
+		}
+
+		do_action( 'redis_object_cache_delete_by_prefix', $prefix, $group );
 
 		return $result;
 	}
